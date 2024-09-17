@@ -196,6 +196,11 @@ vim.keymap.set('n', '<leader>vrc', '<cmd>e $MYVIMRC<CR>', { desc = 'Edit vimrc' 
 -- Yank full file
 vim.keymap.set('n', '<leader>ya', ':%y+<CR>', { desc = 'Yank entire file to clipboard' })
 
+-- Quick binds to open new windows, tabs.
+vim.keymap.set('n', '<C-v>', ':vs<CR>', { desc = 'Open vertical window' })
+vim.keymap.set('n', '<C-x>', ':sp<CR>', { desc = 'Open horizontal window' })
+vim.keymap.set('n', '<C-t>', ':tabnew<CR>', { desc = 'Open new tab' })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 

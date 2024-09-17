@@ -12,13 +12,15 @@ return {
   cmd = 'Neotree',
   keys = {
     { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
-    { '<leader>e', ':Neotree toggle<CR>', desc = 'Toggle NeoTree', silent = true },
   },
   opts = {
     filesystem = {
       window = {
         mappings = {
           ['\\'] = 'close_window',
+          ['<C-v>'] = 'open_vsplit',
+          ['<C-x>'] = 'open_split',
+          ['<C-t>'] = 'open_tabnew',
         },
       },
     },
