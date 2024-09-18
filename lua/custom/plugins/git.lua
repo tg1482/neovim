@@ -56,7 +56,7 @@ return {
 
         -- Toggles
         map('n', '<leader>tb', gs.toggle_current_line_blame, { desc = 'Toggle Git Blame Line' })
-        map('n', '<leader>td', gs.toggle_deleted, { desc = 'Toggle Git Show Deleted' })
+        map('n', '<leader>tgd', gs.toggle_deleted, { desc = 'Toggle Git Show Deleted' })
       end,
     },
   },
