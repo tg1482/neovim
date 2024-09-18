@@ -157,15 +157,14 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 vim.api.nvim_create_user_command('Config', function()
   local os = vim.loop.os_uname().sysname
   if os == 'Darwin' then
-    local applescript = [[
-      tell application "iTerm"
-        create window with default profile
-        tell current session of current window
-          write text "cd ~/.config/nvim && nvim"
-        end tell
-      end tell
-    ]]
-    vim.fn.system('osascript -e ' .. vim.fn.shellescape(applescript))
+    local config_dir = vim.fn.expand '~/.config/nvim'
+    local applescript_path = '~/.config/nvim/bin/open_iterm_and_nvim.scpt'
+
+    if vim.fn.filereadable(vim.fn.expand(applescript_path)) == 1 then
+      vim.fn.system('osascript ' .. applescript_path .. ' ' .. vim.fn.shellescape(config_dir))
+    else
+      print('AppleScript file not found: ' .. applescript_path)
+    end
   else
     print 'This command is currently only supported on macOS'
   end
