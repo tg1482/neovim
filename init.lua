@@ -132,15 +132,19 @@ vim.keymap.set('n', '<C-v>', ':vs<CR>', { desc = 'Open vertical window' })
 vim.keymap.set('n', '<C-x>', ':sp<CR>', { desc = 'Open horizontal window' })
 vim.keymap.set('n', '<C-t>', ':tabnew<CR>', { desc = 'Open new tab' })
 
+-- Initialize the global variable to false (diagnostics off by default)
+vim.g.diagnostics_visible = false
+-- Disable diagnostics globally when Neovim starts
+vim.diagnostic.enable(false)
+
 local function toggle_diagnostics()
+  vim.g.diagnostics_visible = not vim.g.diagnostics_visible
   if vim.g.diagnostics_visible then
-    vim.g.diagnostics_visible = false
-    vim.diagnostic.enable(false)
-    print 'Diagnostics hidden for current buffer'
+    vim.diagnostic.enable(true)
+    print 'Diagnostics enabled globally'
   else
-    vim.g.diagnostics_visible = true
-    vim.diagnostic.enable(true) -- 0 means current buffer
-    print 'Diagnostics visible for current buffer'
+    vim.diagnostic.enable(false)
+    print 'Diagnostics disabled globally'
   end
 end
 
@@ -164,7 +168,7 @@ vim.api.nvim_create_user_command('Config', function()
   local os = vim.loop.os_uname().sysname
   if os == 'Darwin' then
     local config_dir = vim.fn.expand '~/.config/nvim'
-    local applescript_path = '~/.config/nvim/bin/open_iterm_and_nvim.scpt'
+    local applescript_path = '~/.config/nvim/lua/bin/open_iterm_and_nvim.scpt'
 
     if vim.fn.filereadable(vim.fn.expand(applescript_path)) == 1 then
       vim.fn.system('osascript ' .. applescript_path .. ' ' .. vim.fn.shellescape(config_dir))
@@ -566,18 +570,6 @@ require('lazy').setup({
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
-      -- Function to find Python path
-      local function get_python_path(workspace)
-        -- Attempt to find a local venv
-        local local_venv = workspace .. '/venv/bin/python'
-        if vim.fn.executable(local_venv) == 1 then
-          return local_venv
-        end
-
-        -- Fallback to system Python (e.g., from Homebrew)
-        local system_python = vim.fn.exepath 'python3' or vim.fn.exepath 'python' or 'python'
-        return system_python
-      end
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
@@ -601,7 +593,8 @@ require('lazy').setup({
             },
           },
           before_init = function(_, config)
-            config.settings.python.pythonPath = get_python_path(config.root_dir)
+            local python_path_finder = require 'bin.python_path_finder'
+            config.settings.python.pythonPath = python_path_finder.get_python_path(config.root_dir)
           end,
         },
         tailwindcss = {},

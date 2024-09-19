@@ -28,7 +28,7 @@ return {
             local dir = vim.fn.fnamemodify(path, ':p:h') -- get the directory
 
             -- Path to your AppleScript
-            local applescript_path = '~/.config/nvim/bin/open_iterm_and_nvim.scpt'
+            local applescript_path = '~/.config/nvim/lua/bin/open_iterm_and_nvim.scpt'
 
             -- Run the AppleScript with the directory as argument
             vim.fn.system('osascript ' .. applescript_path .. ' ' .. vim.fn.shellescape(dir))
