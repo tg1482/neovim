@@ -99,7 +99,6 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
---
 --  See `:help wincmd` for a list of all window commands
 vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
@@ -111,6 +110,13 @@ vim.keymap.set('n', '<C-Up>', ':resize +2<CR>', { desc = 'Increase window height
 vim.keymap.set('n', '<C-Down>', ':resize -2<CR>', { desc = 'Decrease window height' })
 vim.keymap.set('n', '<C-Left>', ':vertical resize -2<CR>', { desc = 'Decrease window width' })
 vim.keymap.set('n', '<C-Right>', ':vertical resize +2<CR>', { desc = 'Increase window width' })
+
+-- Removing default c to be rebound by avante.nvim
+vim.keymap.set('n', 'c', '<Nop>', { desc = 'Removing the c for Change so that it can be used by avante' })
+
+-- Shortcut to skip 10 lines at once using shift
+vim.keymap.set('n', '<S-j>', '10j', { noremap = true, silent = true, desc = 'Jump 10 lines down' })
+vim.keymap.set('n', '<S-k>', '10k', { noremap = true, silent = true, desc = 'Jump 10 lines up' })
 
 -- Adding keymap to open $MYVIMRC easily
 vim.keymap.set('n', '<leader>vrc', '<cmd>e $MYVIMRC<CR>', { desc = 'Edit vimrc' })
@@ -688,14 +694,20 @@ require('lazy').setup({
           lsp_format_opt = 'fallback'
         end
         return {
-          timeout_ms = 500,
+          timeout_ms = 2000,
           lsp_format = lsp_format_opt,
         }
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
-        python = { 'isort', 'black' },
+        python = {
+          'isort',
+          {
+            'black',
+            timeout_ms = 5000,
+          },
+        },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         javascript = { 'prettierd', 'prettier', stop_after_first = true },

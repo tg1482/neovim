@@ -4,8 +4,8 @@ return {
   lazy = false,
   version = false, -- set this if you want to always pull the latest change
   opts = {
-    provider = 'ollama',
-    auto_suggestions_provider = 'ollama',
+    provider = 'claude',
+    auto_suggestions_provider = 'copilot',
     claude = {
       api_key_name = 'cmd:ai-secrets get ANTHROPIC_API_KEY',
     },
@@ -39,11 +39,13 @@ return {
       },
     },
   },
+
   keys = {
     { '<leader>aman', '<cmd>AvanteSwitchProvider claude<cr>', desc = 'Change to Anthropic' },
     { '<leader>amop', '<cmd>AvanteSwitchProvider openai<cr>', desc = 'Change to OpenAI' },
     { '<leader>amol', '<cmd>AvanteSwitchProvider ollama<cr>', desc = 'Change to Ollama' },
   }, -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
+
   build = 'make',
   -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
   dependencies = {
@@ -52,7 +54,7 @@ return {
     'MunifTanjim/nui.nvim',
     --- The below dependencies are optional,
     'nvim-tree/nvim-web-devicons', -- or echasnovski/mini.icons
-    'zbirenbaum/copilot.lua', -- for providers='copilot'
+    { 'zbirenbaum/copilot.lua', opts = {} }, -- for providers='copilot'
     {
       -- support for image pasting
       'HakonHarnes/img-clip.nvim',
