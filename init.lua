@@ -97,26 +97,28 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 -- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
 -- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
--- Keybinds to make split navigation easier.
---  Use CTRL+<hjkl> to switch between windows
---  See `:help wincmd` for a list of all window commands
-vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+-- Window navigation with Ctrl+Shift+arrows
+vim.keymap.set('n', '<C-S-Left>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+vim.keymap.set('n', '<C-S-Right>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+vim.keymap.set('n', '<C-S-Down>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+vim.keymap.set('n', '<C-S-Up>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
--- Resize splits with Ctrl + arrow keys
-vim.keymap.set('n', '<C-Up>', ':resize +2<CR>', { desc = 'Increase window height' })
-vim.keymap.set('n', '<C-Down>', ':resize -2<CR>', { desc = 'Decrease window height' })
-vim.keymap.set('n', '<C-Left>', ':vertical resize -2<CR>', { desc = 'Decrease window width' })
-vim.keymap.set('n', '<C-Right>', ':vertical resize +2<CR>', { desc = 'Increase window width' })
+-- Fast movement within file with Ctrl+arrows
+vim.keymap.set('n', '<C-Left>', '5b', { desc = 'Move 5 words left' })
+vim.keymap.set('n', '<C-Right>', '5w', { desc = 'Move 5 words right' })
+vim.keymap.set('n', '<C-Up>', '10k', { desc = 'Move 10 lines up' })
+vim.keymap.set('n', '<C-Down>', '10j', { desc = 'Move 10 lines down' })
 
--- Removing default c to be rebound by avante.nvim
-vim.keymap.set('n', 'c', '<Nop>', { desc = 'Removing the c for Change so that it can be used by avante' })
+-- Window resizing with Ctrl+plus/minus for height and Ctrl+Shift+plus/minus for width
+vim.keymap.set('n', '<C-=>', ':resize +2<CR>', { desc = 'Increase window height' })
+vim.keymap.set('n', '<C-->', ':resize -2<CR>', { desc = 'Decrease window height' })
+vim.keymap.set('n', '<C-S-=>', ':vertical resize +2<CR>', { desc = 'Increase window width' })
+vim.keymap.set('n', '<C-S-->', ':vertical resize -2<CR>', { desc = 'Decrease window width' })
 
--- Shortcut to skip 10 lines at once using shift
-vim.keymap.set('n', '<S-j>', '10j', { noremap = true, silent = true, desc = 'Jump 10 lines down' })
-vim.keymap.set('n', '<S-k>', '10k', { noremap = true, silent = true, desc = 'Jump 10 lines up' })
+-- Restore default 'c' (change) functionality
+-- vim.keymap.set('n', 'c', '<Nop>') -- Removed - c key now works normally
+
+-- Note: Fast line movement now handled by Ctrl+Up/Down above
 
 -- Adding keymap to open $MYVIMRC easily
 vim.keymap.set('n', '<leader>vrc', '<cmd>e $MYVIMRC<CR>', { desc = 'Edit vimrc' })
