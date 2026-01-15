@@ -33,26 +33,11 @@ return {
           return '<Ignore>'
         end, { desc = 'Go to prev hunk', expr = true })
 
-        -- Actions
-        map('n', '<leader>gs', gs.stage_hunk, { desc = 'Git Stage Hunk' })
-        map('n', '<leader>gr', gs.reset_hunk, { desc = 'Git Reset Hunk' })
-        map('v', '<leader>gs', function()
-          gs.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
-        end, { desc = 'Git Stage Selected Hunks' })
-        map('v', '<leader>gr', function()
-          gs.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
-        end, { desc = 'Git Reset Selected Hunks' })
-        map('n', '<leader>gS', gs.stage_buffer, { desc = 'Git Stage Buffer' })
-        map('n', '<leader>gu', gs.undo_stage_hunk, { desc = 'Git Undo Stage Hunk' })
-        map('n', '<leader>gR', gs.reset_buffer, { desc = 'Git Reset Buffer' })
+        -- Keep only non-staging actions
         map('n', '<leader>gp', gs.preview_hunk, { desc = 'Git Preview Hunk' })
         map('n', '<leader>gb', function()
           gs.blame_line { full = true }
         end, { desc = 'Git Blame Line' })
-        map('n', '<leader>gd', gs.diffthis, { desc = 'Git Diff This' })
-        map('n', '<leader>gD', function()
-          gs.diffthis '~'
-        end, { desc = 'Git Diff This ~' })
 
         -- Toggles
         map('n', '<leader>tb', gs.toggle_current_line_blame, { desc = 'Toggle Git Blame Line' })
@@ -60,6 +45,7 @@ return {
       end,
     },
   },
+
   {
     'sindrets/diffview.nvim',
     cmd = { 'DiffviewOpen', 'DiffviewFileHistory' },
@@ -74,6 +60,23 @@ return {
         default = { layout = 'diff2_horizontal' },
         merge_tool = { layout = 'diff3_horizontal', disable_diagnostics = true },
         file_history = { layout = 'diff2_horizontal' },
+      },
+
+      keymaps = {
+        view = function(bufnr)
+          local actions = require 'diffview.actions'
+          vim.keymap.set('n', '<leader>gs', actions.stage_hunk, { buffer = bufnr, desc = 'Stage Hunk' })
+          vim.keymap.set('n', '<leader>gu', actions.unstage_hunk, { buffer = bufnr, desc = 'Unstage Hunk' })
+          vim.keymap.set('n', '<leader>gp', actions.preview_hunk, { buffer = bufnr, desc = 'Preview Hunk' })
+          vim.keymap.set('n', '<leader>gS', actions.stage_file, { buffer = bufnr, desc = 'Stage File' })
+          vim.keymap.set('n', '<leader>gU', actions.unstage_file, { buffer = bufnr, desc = 'Unstage File' })
+        end,
+
+        file_panel = function(bufnr)
+          local actions = require 'diffview.actions'
+          vim.keymap.set('n', '<leader>ga', actions.stage_all, { buffer = bufnr, desc = 'Stage All' })
+          vim.keymap.set('n', '<leader>gA', actions.unstage_all, { buffer = bufnr, desc = 'Unstage All' })
+        end,
       },
     },
   },
