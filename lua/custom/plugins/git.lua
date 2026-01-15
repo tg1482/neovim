@@ -23,7 +23,7 @@ local function get_diffview_buffers()
   local stage_buf
   local commit_buf
 
-  for _, win in ipairs { layout.a, layout.b, layout.c, layout.d } do
+  for _, win in ipairs({ layout.a, layout.b, layout.c, layout.d }) do
     if win and win.file and win.file.rev and is_bufnr(win.file.bufnr) then
       if win.file.rev.type == RevType.LOCAL then
         local_buf = win.file.bufnr
