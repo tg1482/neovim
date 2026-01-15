@@ -91,13 +91,22 @@ end
 local function collect_diffview_paths(item)
   local paths = {}
 
-  if item and item._node and item._node.leaves then
+  if not item then
+    return paths
+  end
+
+  if item.path and type(item.collapsed) ~= 'boolean' then
+    table.insert(paths, item.path)
+    return paths
+  end
+
+  if item._node and item._node.leaves then
     for _, node in ipairs(item._node:leaves()) do
       if node.data and node.data.path then
         table.insert(paths, node.data.path)
       end
     end
-  elseif item and item.path then
+  elseif item.path then
     table.insert(paths, item.path)
   end
 
@@ -126,6 +135,11 @@ local function git_on_paths(mode, paths, cwd)
   end
 
   run_git(cmd, cwd)
+
+  if mode == 'discard' then
+    run_git({ 'git', 'clean', '-fd', '--', unpack(paths) }, cwd)
+  end
+
   require('diffview.actions').refresh_files()
 end
 
