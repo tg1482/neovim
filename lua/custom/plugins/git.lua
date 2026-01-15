@@ -72,6 +72,13 @@ local function diffput(source_buf, target_buf, whole_file, write_target)
   end
 end
 
+local function open_commit_prompt()
+  local cmd = vim.api.nvim_replace_termcodes(':terminal git commit -m ""', true, false, true)
+  local left = vim.api.nvim_replace_termcodes('<Left>', true, false, true)
+  vim.api.nvim_feedkeys(cmd, 'n', false)
+  vim.api.nvim_feedkeys(left, 'n', false)
+end
+
 local function run_git(args, cwd)
   local cmd = { unpack(args) }
 
@@ -175,6 +182,8 @@ local function git_on_current_file(mode)
   local cwd = view.adapter and view.adapter.ctx and view.adapter.ctx.toplevel or vim.fn.getcwd()
   git_on_paths(mode, { item.path }, cwd)
 end
+
+vim.keymap.set('n', '<leader>gcm', open_commit_prompt, { desc = 'Git Commit Message' })
 
 return {
   {
