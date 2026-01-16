@@ -357,26 +357,26 @@ require('lazy').setup({
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
         defaults = {
-          prompt_prefix = "🔍 ",
-          selection_caret = "➤ ",
-          path_display = { "truncate" },
+          prompt_prefix = '🔍 ',
+          selection_caret = '➤ ',
+          path_display = { 'truncate' },
           file_ignore_patterns = {
-            "node_modules/.*",
-            "%.git/.*",
-            "%.DS_Store",
+            'node_modules/.*',
+            '%.git/.*',
+            '%.DS_Store',
           },
           mappings = {
             i = {
-              ["<C-j>"] = "move_selection_next",
-              ["<C-k>"] = "move_selection_previous",
-              ["<Esc>"] = "close",
+              ['<C-j>'] = 'move_selection_next',
+              ['<C-k>'] = 'move_selection_previous',
+              ['<Esc>'] = 'close',
             },
           },
         },
         pickers = {
           find_files = {
             hidden = false,
-            find_command = { "rg", "--files", "--hidden", "--glob", "!**/.git/*" },
+            find_command = { 'rg', '--files', '--hidden', '--glob', '!**/.git/*' },
           },
         },
         extensions = {
@@ -782,22 +782,17 @@ require('lazy').setup({
           -- Select the [n]ext item
           ['<C-n>'] = cmp.mapping.select_next_item(),
           -- Select the [p]revious item
-          ['<C-p>'] = cmp.mapping.select_prev_item(),
+          ['<C-S-n>'] = cmp.mapping.select_prev_item(),
 
           -- Scroll the documentation window [b]ack / [f]orward
           ['<C-b>'] = cmp.mapping.scroll_docs(-4),
           ['<C-f>'] = cmp.mapping.scroll_docs(4),
 
-          -- Accept ([y]es) the completion.
+          -- Accept the completion with Enter or Ctrl-y
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
+          ['<CR>'] = cmp.mapping.confirm { select = true },
           ['<C-y>'] = cmp.mapping.confirm { select = true },
-
-          -- If you prefer more traditional completion keymaps,
-          -- you can uncomment the following lines
-          --['<CR>'] = cmp.mapping.confirm { select = true },
-          --['<Tab>'] = cmp.mapping.select_next_item(),
-          --['<S-Tab>'] = cmp.mapping.select_prev_item(),
 
           -- Manually trigger a completion from nvim-cmp.
           --  Generally you don't need this, because nvim-cmp will display
@@ -897,10 +892,10 @@ require('lazy').setup({
 
       -- You can configure sections in the statusline by overriding their
       -- default behavior. For example, here we set the section for
-      -- cursor location to LINE:COLUMN
+      -- cursor location to LINE:COLUMN with percentage
       ---@diagnostic disable-next-line: duplicate-set-field
       statusline.section_location = function()
-        return '%2l:%-2v'
+        return '%2l:%-2v %P'
       end
 
       -- ... and there is more!
