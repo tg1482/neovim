@@ -131,7 +131,11 @@ local function git_on_paths(mode, paths, cwd)
     cmd = { 'git', 'add', '--' }
   elseif mode == 'unstage' then
     cmd = { 'git', 'restore', '--staged', '--' }
+  elseif mode == 'discard_unstaged' then
+    -- Only discard unstaged changes, keep staged changes
+    cmd = { 'git', 'restore', '--worktree', '--' }
   elseif mode == 'discard' then
+    -- Discard everything (both staged and unstaged)
     cmd = { 'git', 'restore', '--staged', '--worktree', '--' }
   else
     return
@@ -266,11 +270,16 @@ return {
             git_on_current_file 'unstage'
           end,
           ['<leader>gx'] = function()
+            -- Discard current unstaged hunk only
             local local_buf, stage_buf = get_diffview_buffers()
-            diffput(stage_buf, local_buf, false, true)
+            if stage_buf then
+              -- Copy this hunk from stage to local (discards unstaged changes in this hunk)
+              diffput(stage_buf, local_buf, false, true)
+            end
           end,
           ['<leader>gX'] = function()
-            git_on_current_file 'discard'
+            -- Discard all unstaged changes in the entire file
+            git_on_current_file 'discard_unstaged'
           end,
         },
 
@@ -282,7 +291,7 @@ return {
             git_on_selection 'unstage'
           end,
           ['<leader>gx'] = function()
-            git_on_selection 'discard'
+            git_on_selection 'discard_unstaged'  -- Only discards unstaged changes
           end,
           ['<leader>ga'] = function()
             require('diffview.actions').stage_all()
