@@ -208,6 +208,137 @@ vim.api.nvim_create_user_command('Config', function()
   end
 end, {})
 
+-- Ask opencode in a scratch buffer.
+local function open_scratch_buffer(title)
+  -- Reuse an existing buffer if it exists.
+  local buf = vim.fn.bufnr(title)
+  if buf == -1 then
+    buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_name(buf, title)
+  end
+  -- Scratch buffer options: no file, wipe on close, markdown output.
+  vim.bo[buf].buftype = 'nofile'
+  vim.bo[buf].bufhidden = 'wipe'
+  vim.bo[buf].swapfile = false
+  vim.bo[buf].filetype = 'markdown'
+
+  -- Reuse the window if already visible, otherwise split.
+  local win = vim.fn.bufwinid(buf)
+  if win ~= -1 then
+    vim.api.nvim_set_current_win(win)
+  else
+    vim.cmd 'botright split'
+    vim.api.nvim_win_set_buf(0, buf)
+  end
+  return buf
+end
+
+-- Quote a prompt as opencode run "prompt".
+local function shell_quote_double(value)
+  return '"' .. value:gsub('\\', '\\\\'):gsub('"', '\\"') .. '"'
+end
+
+-- Use provided args or fall back to current line.
+local function resolve_prompt(value)
+  local prompt = value
+  if prompt == nil or prompt == '' then
+    prompt = vim.api.nvim_get_current_line()
+  end
+  return vim.trim(prompt or '')
+end
+
+-- Write the prompt header into the scratch buffer.
+local function append_prompt(buf, prompt, opts)
+  if opts.continue then
+    vim.api.nvim_buf_set_lines(buf, -1, -1, false, { '', '> ' .. prompt, '' })
+  else
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { '# opencode', '', '> ' .. prompt, '' })
+  end
+end
+
+-- Strip carriage returns from PTY output.
+local function clean_output(lines)
+  local cleaned = {}
+  for _, line in ipairs(lines or {}) do
+    local sanitized = line:gsub('\r', '')
+    table.insert(cleaned, sanitized)
+  end
+  if #cleaned == 1 and cleaned[1] == '' then
+    return {}
+  end
+  return cleaned
+end
+
+-- Run opencode in config dir and stream output.
+local function ask_opencode(prompt, opts)
+  opts = opts or {}
+  local resolved = resolve_prompt(prompt)
+  if resolved == '' then
+    vim.notify('Ask needs a prompt.', vim.log.levels.WARN)
+    return
+  end
+
+  -- Run from the nvim config directory.
+  local config_dir = vim.fn.stdpath 'config'
+  local buf = open_scratch_buffer('opencode://ask')
+  local flag = opts.continue and '--continue ' or ''
+  local command = ('opencode run %s%s'):format(flag, shell_quote_double(resolved))
+
+  append_prompt(buf, resolved, opts)
+
+  local function append_lines(lines)
+    local cleaned = clean_output(lines)
+    if #cleaned == 0 then
+      return
+    end
+
+    -- Buffer updates must happen on the main loop.
+    vim.schedule(function()
+      if vim.api.nvim_buf_is_valid(buf) then
+        vim.api.nvim_buf_set_lines(buf, -1, -1, false, cleaned)
+      end
+    end)
+  end
+
+  -- pty makes opencode behave like a terminal.
+  local job_id = vim.fn.jobstart(command, {
+    cwd = config_dir,
+    pty = true,
+    on_stdout = function(_, data)
+      append_lines(data)
+    end,
+    on_stderr = function(_, data)
+      append_lines(data)
+    end,
+  })
+
+  if job_id <= 0 then
+    append_lines { '', 'Failed to start opencode job.' }
+  end
+end
+
+-- User commands and keymaps.
+vim.api.nvim_create_user_command('Ask', function(opts)
+  ask_opencode(opts.args)
+end, { nargs = '*', desc = 'Ask opencode a question' })
+
+vim.api.nvim_create_user_command('AskContinue', function(opts)
+  ask_opencode(opts.args, { continue = true })
+end, { nargs = '*', desc = 'Ask opencode continue' })
+
+vim.keymap.set('n', '<leader>ao', function()
+  ask_opencode()
+end, { desc = 'Ask opencode (line)' })
+
+vim.keymap.set('n', '<leader>ac', function()
+  ask_opencode(nil, { continue = true })
+end, { desc = 'Ask opencode continue (line)' })
+
+vim.cmd [[
+  cnoreabbrev <expr> ask ((getcmdtype() == ':' && getcmdline() == 'ask') ? 'Ask' : 'ask')
+  cnoreabbrev <expr> askc ((getcmdtype() == ':' && getcmdline() == 'askc') ? 'AskContinue' : 'askc')
+]]
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
