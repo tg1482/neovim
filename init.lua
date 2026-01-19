@@ -9,6 +9,9 @@ vim.g.maplocalleader = ' '
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
+-- Toggle hidden files in Telescope
+vim.g.telescope_show_hidden_files = vim.g.telescope_show_hidden_files or false
+
 -- [[ Setting options ]]
 -- See `:help vim.opt`
 -- NOTE: You can change these options as you wish!
@@ -109,6 +112,18 @@ vim.keymap.set('n', '<C-Right>', '5w', { desc = 'Move 5 words right' })
 vim.keymap.set('n', '<C-Up>', '10k', { desc = 'Move 10 lines up' })
 vim.keymap.set('n', '<C-Down>', '10j', { desc = 'Move 10 lines down' })
 
+-- Move line/selection with Alt+arrows
+vim.keymap.set('n', '<M-Up>', ':m .-2<CR>==', { desc = 'Move line up' })
+vim.keymap.set('n', '<M-Down>', ':m .+1<CR>==', { desc = 'Move line down' })
+vim.keymap.set('v', '<M-Up>', ":m '<-2<CR>gv=gv", { desc = 'Move selection up' })
+vim.keymap.set('v', '<M-Down>', ":m '>+1<CR>gv=gv", { desc = 'Move selection down' })
+
+-- Move line/selection by 10 with Ctrl+Alt+arrows/hjkl
+vim.keymap.set('n', '<M-C-Up>', ':m .-11<CR>==', { desc = 'Move line up 10' })
+vim.keymap.set('n', '<M-C-Down>', ':m .+10<CR>==', { desc = 'Move line down 10' })
+vim.keymap.set('v', '<M-C-Up>', ":m '<-11<CR>gv=gv", { desc = 'Move selection up 10' })
+vim.keymap.set('v', '<M-C-Down>', ":m '>+10<CR>gv=gv", { desc = 'Move selection down 10' })
+
 -- Window resizing with Ctrl+plus/minus for height and Ctrl+Shift+plus/minus for width
 vim.keymap.set('n', '<C-=>', ':resize +2<CR>', { desc = 'Increase window height' })
 vim.keymap.set('n', '<C-->', ':resize -2<CR>', { desc = 'Decrease window height' })
@@ -126,6 +141,14 @@ vim.keymap.set('n', '<leader>vrc', '<cmd>e $MYVIMRC<CR>', { desc = 'Edit vimrc' 
 -- Yank full file
 vim.keymap.set('n', '<leader>ya', ':%y+<CR>', { desc = 'Yank entire file to clipboard' })
 
+-- Toggle hidden files for Telescope
+local function toggle_hidden_files()
+  vim.g.telescope_show_hidden_files = not vim.g.telescope_show_hidden_files
+  vim.notify(('Hidden files: %s'):format(vim.g.telescope_show_hidden_files and 'ON' or 'OFF'))
+end
+
+vim.keymap.set('n', '<leader>sth', toggle_hidden_files, { desc = '[S]earch [T]oggle [H]idden files' })
+
 -- Add empty line below current line with Enter in normal mode
 vim.keymap.set('n', '<CR><CR>', 'o<Esc>', { noremap = true, silent = true, desc = 'Add empty line below' })
 
@@ -133,6 +156,9 @@ vim.keymap.set('n', '<CR><CR>', 'o<Esc>', { noremap = true, silent = true, desc 
 vim.keymap.set('n', '<C-v>', ':vs<CR>', { desc = 'Open vertical window' })
 vim.keymap.set('n', '<C-x>', ':sp<CR>', { desc = 'Open horizontal window' })
 vim.keymap.set('n', '<C-t>', ':tabnew<CR>', { desc = 'Open new tab' })
+
+-- Jump back in jumplist (after gd/gr)
+vim.keymap.set('n', '<C-u>', '<C-o>', { desc = 'Jump back' })
 
 -- Initialize the global variable to false (diagnostics off by default)
 vim.g.diagnostics_visible = false
@@ -373,12 +399,7 @@ require('lazy').setup({
             },
           },
         },
-        pickers = {
-          find_files = {
-            hidden = false,
-            find_command = { 'rg', '--files', '--hidden', '--glob', '!**/.git/*' },
-          },
-        },
+        pickers = {},
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -392,12 +413,47 @@ require('lazy').setup({
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
+
+      local function hidden_state()
+        return vim.g.telescope_show_hidden_files
+      end
+
+      local function apply_hidden_file_opts(opts)
+        opts = opts or {}
+        local show_hidden = hidden_state()
+        opts.hidden = show_hidden
+        opts.no_ignore = show_hidden
+        opts.no_ignore_parent = show_hidden
+        return opts
+      end
+
+      local function hidden_grep_args()
+        if hidden_state() then
+          return { '--hidden', '--no-ignore', '--no-ignore-parent', '--glob', '!**/.git/*' }
+        end
+        return { '--glob', '!**/.git/*' }
+      end
+
+      local function find_files_with_hidden(opts)
+        builtin.find_files(apply_hidden_file_opts(opts))
+      end
+
+      local function live_grep_with_hidden(opts)
+        opts = opts or {}
+        opts.additional_args = hidden_grep_args
+        builtin.live_grep(opts)
+      end
+
+      local function find_config_with_hidden()
+        find_files_with_hidden { cwd = vim.fn.stdpath 'config' }
+      end
+
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sf', find_files_with_hidden, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
-      vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
+      vim.keymap.set('n', '<leader>sg', live_grep_with_hidden, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
