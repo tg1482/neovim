@@ -23,7 +23,7 @@ local function get_diffview_buffers()
   local stage_buf
   local commit_buf
 
-  for _, win in ipairs({ layout.a, layout.b, layout.c, layout.d }) do
+  for _, win in ipairs { layout.a, layout.b, layout.c, layout.d } do
     if win and win.file and win.file.rev and is_bufnr(win.file.bufnr) then
       if win.file.rev.type == RevType.LOCAL then
         local_buf = win.file.bufnr
@@ -224,7 +224,10 @@ return {
           return '<Ignore>'
         end, { desc = 'Go to prev hunk', expr = true })
 
-        -- Keep only non-staging actions
+        -- Hunk actions
+        map('n', '<leader>gs', gs.stage_hunk, { desc = 'Git Stage Hunk' })
+        map('n', '<leader>gu', gs.undo_stage_hunk, { desc = 'Git Unstage Hunk' })
+        map('n', '<leader>gx', gs.reset_hunk, { desc = 'Git Reset Hunk' })
         map('n', '<leader>gp', gs.preview_hunk, { desc = 'Git Preview Hunk' })
         map('n', '<leader>gb', function()
           gs.blame_line { full = true }
@@ -291,7 +294,7 @@ return {
             git_on_selection 'unstage'
           end,
           ['<leader>gx'] = function()
-            git_on_selection 'discard_unstaged'  -- Only discards unstaged changes
+            git_on_selection 'discard_unstaged' -- Only discards unstaged changes
           end,
           ['<leader>ga'] = function()
             require('diffview.actions').stage_all()
