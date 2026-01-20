@@ -141,21 +141,20 @@ vim.keymap.set('n', '<leader>vrc', '<cmd>e $MYVIMRC<CR>', { desc = 'Edit vimrc' 
 -- Yank full file
 vim.keymap.set('n', '<leader>ya', ':%y+<CR>', { desc = 'Yank entire file to clipboard' })
 
-<<<<<<< HEAD
 -- Yank relative file path (relative to CWD)
 vim.keymap.set('n', 'yp', function()
-  local path = vim.fn.expand('%:.')
+  local path = vim.fn.expand '%:.'
   vim.fn.setreg('+', path)
   print('Yanked: ' .. path)
 end, { desc = 'Yank relative file path' })
 
 -- Yank full file path
 vim.keymap.set('n', 'ypf', function()
-  local path = vim.fn.expand('%:p')
+  local path = vim.fn.expand '%:p'
   vim.fn.setreg('+', path)
   print('Yanked: ' .. path)
 end, { desc = 'Yank full file path' })
-=======
+
 -- Toggle hidden files for Telescope
 local function toggle_hidden_files()
   vim.g.telescope_show_hidden_files = not vim.g.telescope_show_hidden_files
@@ -163,7 +162,6 @@ local function toggle_hidden_files()
 end
 
 vim.keymap.set('n', '<leader>sth', toggle_hidden_files, { desc = '[S]earch [T]oggle [H]idden files' })
->>>>>>> master
 
 -- Add empty line below current line with Enter in normal mode
 vim.keymap.set('n', '<CR><CR>', 'o<Esc>', { noremap = true, silent = true, desc = 'Add empty line below' })
@@ -296,7 +294,7 @@ local function ask_opencode(prompt, opts)
 
   -- Run from the nvim config directory.
   local config_dir = vim.fn.stdpath 'config'
-  local buf = open_scratch_buffer('opencode://ask')
+  local buf = open_scratch_buffer 'opencode://ask'
   local flag = opts.continue and '--continue ' or ''
   local command = ('opencode run %s%s'):format(flag, shell_quote_double(resolved))
 
