@@ -106,9 +106,30 @@ vim.keymap.set('n', '<C-S-Right>', '<C-w><C-l>', { desc = 'Move focus to the rig
 vim.keymap.set('n', '<C-S-Down>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-S-Up>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
--- Fast movement within file with Ctrl+arrows
-vim.keymap.set('n', '<C-Left>', '5b', { desc = 'Move 5 words left' })
-vim.keymap.set('n', '<C-Right>', '5w', { desc = 'Move 5 words right' })
+-- Fast movement within file with Ctrl+arrows (stops at line boundaries)
+vim.keymap.set('n', '<C-Left>', function()
+  local line = vim.fn.line('.')
+  for i = 1, 5 do
+    local prev_col = vim.fn.col('.')
+    vim.cmd('normal! b')
+    if vim.fn.line('.') ~= line then
+      vim.fn.cursor(line, prev_col)
+      break
+    end
+  end
+end, { desc = 'Move up to 5 words left, stop at line start' })
+
+vim.keymap.set('n', '<C-Right>', function()
+  local line = vim.fn.line('.')
+  for i = 1, 5 do
+    local prev_col = vim.fn.col('.')
+    vim.cmd('normal! w')
+    if vim.fn.line('.') ~= line then
+      vim.fn.cursor(line, prev_col)
+      break
+    end
+  end
+end, { desc = 'Move up to 5 words right, stop at line end' })
 vim.keymap.set('n', '<C-Up>', '10k', { desc = 'Move 10 lines up' })
 vim.keymap.set('n', '<C-Down>', '10j', { desc = 'Move 10 lines down' })
 

@@ -137,6 +137,15 @@ local function git_on_paths(mode, paths, cwd)
   elseif mode == 'discard' then
     -- Discard everything (both staged and unstaged)
     cmd = { 'git', 'restore', '--staged', '--worktree', '--' }
+  elseif mode == 'delete_untracked' then
+    -- Delete untracked files using git clean
+    cmd = { 'git', 'clean', '-fd', '--' }
+    for _, path in ipairs(paths) do
+      table.insert(cmd, path)
+    end
+    run_git(cmd, cwd)
+    require('diffview.actions').refresh_files()
+    return
   else
     return
   end
@@ -294,7 +303,10 @@ return {
             git_on_selection 'unstage'
           end,
           ['<leader>gx'] = function()
-            git_on_selection 'discard_unstaged' -- Only discards unstaged changes
+            git_on_selection 'discard_unstaged' -- Discard unstaged changes (tracked files)
+          end,
+          ['<leader>gX'] = function()
+            git_on_selection 'delete_untracked' -- Delete untracked files (use git clean)
           end,
           ['<leader>ga'] = function()
             require('diffview.actions').stage_all()
