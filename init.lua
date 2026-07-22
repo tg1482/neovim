@@ -521,11 +521,39 @@ require('lazy').setup({
         end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
+      {
+        'nvim-telescope/telescope-live-grep-args.nvim',
+        version = '^1.0.0',
+      },
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
+      local actions = require 'telescope.actions'
+      local action_set = require 'telescope.actions.set'
+      local action_state = require 'telescope.actions.state'
+      local live_grep_args_actions = require 'telescope-live-grep-args.actions'
+      local previewers_utils = require 'telescope.previewers.utils'
+
+      local function move_selection_by(change)
+        return function(prompt_bufnr)
+          local picker = action_state.get_current_picker(prompt_bufnr)
+          vim.wo[picker.results_win].scrolloff = 5
+          action_set.shift_selection(prompt_bufnr, change)
+        end
+      end
+
+      local function open_clicked_result(prompt_bufnr)
+        local picker = action_state.get_current_picker(prompt_bufnr)
+        local mouse = vim.fn.getmousepos()
+        if mouse.winid ~= picker.results_win or mouse.line < 1 then
+          return
+        end
+        picker:set_selection(mouse.line - 1)
+        actions.select_default(prompt_bufnr)
+      end
+
       -- Telescope is a fuzzy finder that comes with a lot of different things that
       -- it can fuzzy find! It's more than just a "file finder", it can search
       -- many different aspects of Neovim, your workspace, LSP, and more!
@@ -551,7 +579,19 @@ require('lazy').setup({
         defaults = {
           prompt_prefix = '🔍 ',
           selection_caret = '➤ ',
+          scroll_strategy = 'limit',
           path_display = { 'truncate' },
+          preview = {
+            filesize_limit = 1,
+            timeout = 100,
+            filetype_hook = function(_, bufnr, opts)
+              if opts.ft == 'html' then
+                previewers_utils.set_preview_message(bufnr, opts.winid, 'HTML preview disabled for responsiveness')
+                return false
+              end
+              return true
+            end,
+          },
           file_ignore_patterns = {
             'node_modules/.*',
             '%.git/.*',
@@ -561,12 +601,36 @@ require('lazy').setup({
             i = {
               ['<C-j>'] = 'move_selection_next',
               ['<C-k>'] = 'move_selection_previous',
+              ['<C-Down>'] = move_selection_by(10),
+              ['<C-Up>'] = move_selection_by(-10),
+              ['<C-d>'] = actions.results_scrolling_down,
+              ['<C-u>'] = actions.results_scrolling_up,
+              ['<ScrollWheelDown>'] = move_selection_by(3),
+              ['<ScrollWheelUp>'] = move_selection_by(-3),
+              ['<LeftMouse>'] = open_clicked_result,
               ['<Esc>'] = 'close',
+            },
+            n = {
+              ['<C-Down>'] = move_selection_by(10),
+              ['<C-Up>'] = move_selection_by(-10),
+              ['<C-d>'] = actions.results_scrolling_down,
+              ['<C-u>'] = actions.results_scrolling_up,
+              ['<ScrollWheelDown>'] = move_selection_by(3),
+              ['<ScrollWheelUp>'] = move_selection_by(-3),
+              ['<LeftMouse>'] = open_clicked_result,
             },
           },
         },
         pickers = {},
         extensions = {
+          live_grep_args = {
+            auto_quoting = true,
+            mappings = {
+              i = {
+                ['<C-f>'] = live_grep_args_actions.quote_prompt { postfix = ' --iglob *.' },
+              },
+            },
+          },
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
           },
@@ -576,6 +640,7 @@ require('lazy').setup({
       -- Enable Telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      require('telescope').load_extension 'live_grep_args'
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -607,7 +672,7 @@ require('lazy').setup({
       local function live_grep_with_hidden(opts)
         opts = opts or {}
         opts.additional_args = hidden_grep_args
-        builtin.live_grep(opts)
+        require('telescope').extensions.live_grep_args.live_grep_args(opts)
       end
 
       local function find_config_with_hidden()
@@ -670,7 +735,7 @@ require('lazy').setup({
     dependencies = {
       -- Automatically install LSPs and related tools to stdpath for Neovim
       { 'williamboman/mason.nvim', config = true }, -- NOTE: Must be loaded before dependants
-      'williamboman/mason-lspconfig.nvim',
+      { 'williamboman/mason-lspconfig.nvim', version = '^1.0.0' },
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
       -- Useful status updates for LSP.

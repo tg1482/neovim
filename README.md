@@ -28,6 +28,13 @@
 ### File & Search Operations
 - `<leader>sf`: Search files (Telescope)
 - `<leader>sg`: Live grep (search text in files)
+- `<C-j/k>`: Move one grep result down/up (inside Telescope)
+- `<C-Down/Up>`: Move the selection 10 results; scroll near the window edge
+- `<C-d/u>`: Alternate half-page jump keys (inside Telescope)
+- `<ScrollWheelDown/Up>`: Move three results down/up (inside Telescope)
+- `<LeftMouse>`: Open the clicked Telescope result
+- `<C-f>`: Append a file glob filter to live grep; type the extension after the dot
+- HTML and files larger than 1 MB skip previews to keep Telescope responsive
 - `<leader>sw`: Search current word
 - `<leader>sh`: Search help tags
 - `<leader>sk`: Search keymaps
@@ -96,4 +103,3 @@ The configuration is designed to be modular. You can add or modify plugins in th
 Remember to occasionally update your plugins and Neovim itself to benefit from the latest features and bug fixes. Use `:Lazy update` to update plugins.
 
 Happy coding, future Tanmay! May your keystrokes be efficient and your code elegant.
-
