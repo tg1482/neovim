@@ -19,6 +19,7 @@ vim.g.telescope_show_hidden_files = vim.g.telescope_show_hidden_files or false
 
 -- Make line numbers default
 vim.opt.number = true
+vim.opt.wrap = false
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
 -- vim.opt.relativenumber = true
@@ -33,9 +34,32 @@ vim.opt.showmode = false
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
+--  Only on macOS: a headless Linux box has no system clipboard for
+--  unnamedplus to reach, so every y/d/p would depend on a provider that
+--  doesn't exist there.
 vim.schedule(function()
-  vim.opt.clipboard = 'unnamedplus'
+  if vim.fn.has 'mac' == 1 then
+    vim.opt.clipboard = 'unnamedplus'
+  end
 end)
+
+-- Paste-safe insert, for panes (ssh'd/remote) where bracketed-paste mode
+-- isn't reliably negotiated back through the connection: without it, a
+-- clipboard paste in Normal mode is indistinguishable from fast typing, so
+-- ":wq!" or "dd" inside the pasted text executes for real instead of being
+-- inserted (verified: it quits Neovim). 'paste' alone doesn't protect
+-- Normal mode -- only entering Insert first does that; 'paste' then stops
+-- autoindent from cascading on every pasted line once you're there.
+vim.keymap.set('n', '<leader>vp', function()
+  vim.o.paste = true
+  vim.cmd 'startinsert'
+end, { desc = '[V]im-safe [P]aste mode (flaky ssh/tmux paste signaling)' })
+
+vim.api.nvim_create_autocmd('InsertLeave', {
+  callback = function()
+    vim.o.paste = false
+  end,
+})
 
 -- Enable break indent
 vim.opt.breakindent = true
@@ -162,6 +186,30 @@ vim.keymap.set('n', '<leader>vrc', '<cmd>e $MYVIMRC<CR>', { desc = 'Edit vimrc' 
 -- Yank full file
 vim.keymap.set('n', '<leader>ya', ':%y+<CR>', { desc = 'Yank entire file to clipboard' })
 
+vim.keymap.set('n', '<leader>tl', function()
+  vim.wo.wrap = not vim.wo.wrap
+  vim.notify(('Line wrap: %s'):format(vim.wo.wrap and 'ON' or 'OFF'))
+end, { desc = '[T]oggle [L]ine wrap' })
+
+local function uppercase_quit(command)
+  return function(opts)
+    vim.api.nvim_cmd({ cmd = command, bang = opts.bang }, {})
+  end
+end
+
+vim.api.nvim_create_user_command('Q', uppercase_quit 'quit', { bang = true, desc = 'Quit', force = true })
+vim.api.nvim_create_user_command('Qa', uppercase_quit 'quitall', { bang = true, desc = 'Quit all', force = true })
+vim.api.nvim_create_user_command('QA', uppercase_quit 'quitall', { bang = true, desc = 'Quit all', force = true })
+
+vim.api.nvim_create_user_command('Refresh', function()
+  vim.cmd.source(vim.fn.expand '$MYVIMRC')
+  vim.notify 'Neovim configuration refreshed'
+end, { desc = 'Reload Neovim configuration', force = true })
+
+vim.cmd [[
+  cnoreabbrev <expr> refresh ((getcmdtype() == ':' && getcmdline() == 'refresh') ? 'Refresh' : 'refresh')
+]]
+
 -- Yank relative file path (relative to CWD)
 vim.keymap.set('n', 'yp', function()
   local path = vim.fn.expand '%:.'
@@ -241,7 +289,7 @@ vim.api.nvim_create_user_command('Config', function()
   else
     print 'This command is currently only supported on macOS'
   end
-end, {})
+end, { force = true })
 
 -- Ask opencode in a scratch buffer.
 local function open_scratch_buffer(title)
@@ -355,11 +403,11 @@ end
 -- User commands and keymaps.
 vim.api.nvim_create_user_command('Ask', function(opts)
   ask_opencode(opts.args)
-end, { nargs = '*', desc = 'Ask opencode a question' })
+end, { nargs = '*', desc = 'Ask opencode a question', force = true })
 
 vim.api.nvim_create_user_command('AskContinue', function(opts)
   ask_opencode(opts.args, { continue = true })
-end, { nargs = '*', desc = 'Ask opencode continue' })
+end, { nargs = '*', desc = 'Ask opencode continue', force = true })
 
 vim.keymap.set('n', '<leader>ao', function()
   ask_opencode()
@@ -624,7 +672,7 @@ require('lazy').setup({
         pickers = {},
         extensions = {
           live_grep_args = {
-            auto_quoting = true,
+            auto_quoting = false,
             mappings = {
               i = {
                 ['<C-f>'] = live_grep_args_actions.quote_prompt { postfix = ' --iglob *.' },
@@ -734,9 +782,9 @@ require('lazy').setup({
     'neovim/nvim-lspconfig',
     dependencies = {
       -- Automatically install LSPs and related tools to stdpath for Neovim
-      { 'williamboman/mason.nvim', config = true }, -- NOTE: Must be loaded before dependants
+      { 'williamboman/mason.nvim', version = '^1.0.0', config = true }, -- NOTE: Must be loaded before dependants
       { 'williamboman/mason-lspconfig.nvim', version = '^1.0.0' },
-      'WhoIsSethDaniel/mason-tool-installer.nvim',
+      { 'WhoIsSethDaniel/mason-tool-installer.nvim', commit = '374c78d3ebb5c53f43ea6bd906b6587b5e899b9e' },
 
       -- Useful status updates for LSP.
       -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
@@ -908,8 +956,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
-        --
+        ts_ls = {},
 
         lua_ls = {
           -- cmd = {...},
@@ -1007,6 +1054,11 @@ require('lazy').setup({
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         javascript = { 'prettierd', 'prettier', stop_after_first = true },
+      },
+      formatters = {
+        black = {
+          prepend_args = { '--line-length', '80' },
+        },
       },
     },
   },
@@ -1179,11 +1231,89 @@ require('lazy').setup({
 
       -- You can configure sections in the statusline by overriding their
       -- default behavior. For example, here we set the section for
-      -- cursor location to LINE:COLUMN with percentage
+      -- cursor location to LINE:COLUMN with vertical and horizontal progress
       ---@diagnostic disable-next-line: duplicate-set-field
       statusline.section_location = function()
-        return '%2l:%-2v %P'
+        return '%2l:%-2v ↓%P →%{col("$") > 2 ? min([100, (col(".") - 1) * 100 / (col("$") - 2)]) : 0}%%'
       end
+
+      -- Minimap for code overview
+      local map = require 'mini.map'
+      map.setup {
+        integrations = {
+          map.gen_integration.builtin_search(), -- Show search matches
+          map.gen_integration.gitsigns(), -- Show git changes
+          map.gen_integration.diagnostic(), -- Show LSP diagnostics
+        },
+        symbols = {
+          encode = map.gen_encode_symbols.dot('4x2'), -- Clean minimal dots
+          scroll_line = '█',
+          scroll_view = '┃',
+        },
+        window = {
+          show_integration_count = false, -- Don't show counts, keep it clean
+          width = 15, -- Width of the minimap window
+          winblend = 0, -- No transparency
+        },
+      }
+
+      local function minimap_is_open()
+        return next(map.current.win_data or {}) ~= nil
+      end
+
+      local function is_large_buffer()
+        if vim.api.nvim_buf_line_count(0) > 10000 then
+          return true
+        end
+        local path = vim.api.nvim_buf_get_name(0)
+        local stat = path ~= '' and vim.uv.fs_stat(path) or nil
+        return stat ~= nil and stat.size > 512 * 1024
+      end
+
+      local function open_minimap_for_buffer()
+        local mode = is_large_buffer() and 'scrollbar' or 'map'
+        if minimap_is_open() and vim.t.minimap_mode == mode then
+          return
+        end
+        if minimap_is_open() then
+          map.close()
+        end
+        if mode == 'scrollbar' then
+          map.open {
+            integrations = {},
+            window = { width = 1, show_integration_count = false },
+          }
+        else
+          map.open()
+        end
+        vim.t.minimap_mode = mode
+      end
+
+      -- Auto-open minimap only for wide windows (>140 columns)
+      vim.api.nvim_create_autocmd({ 'VimEnter', 'VimResized', 'BufWinEnter' }, {
+        callback = function()
+          if vim.o.columns > 140 then
+            open_minimap_for_buffer()
+          elseif minimap_is_open() then
+            map.close()
+            vim.t.minimap_mode = nil
+          end
+        end,
+      })
+
+      -- Keybindings for minimap
+      vim.keymap.set('n', '<leader>tm', function()
+        if minimap_is_open() then
+          map.close()
+          vim.t.minimap_mode = nil
+        else
+          open_minimap_for_buffer()
+        end
+      end, { desc = '[T]oggle [M]inimap' })
+
+      vim.keymap.set('n', '<leader>mr', function()
+        map.refresh()
+      end, { desc = '[M]inimap [R]efresh' })
 
       -- ... and there is more!
       --  Check out: https://github.com/echasnovski/mini.nvim
@@ -1191,6 +1321,9 @@ require('lazy').setup({
   },
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
+    -- master, not the default main: the treesitter rewrite on main removed
+    -- nvim-treesitter.configs, which the opts block below drives.
+    branch = 'master',
     build = ':TSUpdate',
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
